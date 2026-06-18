@@ -1,0 +1,268 @@
+# Copyright (C) 2026 WC Hub Dilicom
+# This file is distributed under the same license as the WC Hub Dilicom plugin.
+msgid ""
+msgstr ""
+"Project-Id-Version: WC Hub Dilicom 1.0.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wc-hub-dilicom\n"
+"POT-Creation-Date: 2026-04-11T00:00:00+00:00\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"PO-Revision-Date: 2026-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: fr_FR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Domain: wc-hub-dilicom\n"
+
+#: admin/views/dashboard.php
+msgid "HUB Dilicom — Tableau de bord"
+msgstr ""
+
+#: admin/views/dashboard.php
+msgid "Configuration requise :"
+msgstr ""
+
+#: admin/views/dashboard.php
+msgid "Vos identifiants API ne sont pas configurés."
+msgstr ""
+
+#: admin/views/dashboard.php
+msgid "Configurer maintenant →"
+msgstr ""
+
+#: admin/views/dashboard.php
+msgid "Livres importés"
+msgstr ""
+
+#: admin/views/dashboard.php
+msgid "Livres numériques"
+msgstr ""
+
+#: admin/views/dashboard.php
+msgid "Livres physiques"
+msgstr ""
+
+#: admin/views/dashboard.php
+msgid "Erreurs (24h)"
+msgstr ""
+
+#: admin/views/dashboard.php
+msgid "Connexion API"
+msgstr ""
+
+#: admin/views/dashboard.php
+msgid "Environnement"
+msgstr ""
+
+#: admin/views/dashboard.php
+msgid "Identifiants"
+msgstr ""
+
+#: admin/views/dashboard.php
+msgid "Configurés"
+msgstr ""
+
+#: admin/views/dashboard.php
+msgid "Manquants"
+msgstr ""
+
+#: admin/views/dashboard.php
+msgid "Dernière synchro"
+msgstr ""
+
+#: admin/views/dashboard.php
+msgid "Paramètres"
+msgstr ""
+
+#: admin/views/dashboard.php
+msgid "Voir les logs"
+msgstr ""
+
+#: admin/views/dashboard.php
+msgid "Import bulk"
+msgstr ""
+
+#: admin/views/dashboard.php
+msgid "%d livre(s) en attente d'import."
+msgstr ""
+
+#: admin/views/dashboard.php
+msgid "Aucun import en cours."
+msgstr ""
+
+#: admin/views/dashboard.php
+msgid "Lancer un import"
+msgstr ""
+
+#: admin/views/dashboard.php
+msgid "Catalogue"
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Paramètres HUB Dilicom"
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Identifiants API"
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Fournis par Dilicom lors de votre inscription au HUB."
+msgstr ""
+
+#: admin/views/settings.php
+msgid "GLN Revendeur"
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Votre GLN de revendeur (13 chiffres)."
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Mot de passe API"
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Laissez vide pour conserver le mot de passe actuel."
+msgstr ""
+
+#: admin/views/settings.php
+msgid "GLN Contractant"
+msgstr ""
+
+#: admin/views/settings.php
+msgid "GLN du contractant si différent du revendeur (glnContractor)."
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Tester la connexion"
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Mode"
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Production"
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Test / Recette"
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Devise"
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Pays par défaut"
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Code ISO 2 lettres (FR, BE, CH…)"
+msgstr ""
+
+#: admin/views/settings.php
+msgid "Enregistrer les paramètres"
+msgstr ""
+
+#: admin/views/catalog.php
+msgid "Catalogue HUB Dilicom"
+msgstr ""
+
+#: admin/views/catalog.php
+msgid "Rechercher un livre"
+msgstr ""
+
+#: admin/views/catalog.php
+msgid "Rechercher"
+msgstr ""
+
+#: admin/views/catalog.php
+msgid "Importer ce livre"
+msgstr ""
+
+#: admin/views/import.php
+msgid "Import bulk — HUB Dilicom"
+msgstr ""
+
+#: admin/views/import.php
+msgid "Filtres d'importation"
+msgstr ""
+
+#: admin/views/import.php
+msgid "Lancer l'import bulk"
+msgstr ""
+
+#: admin/views/import.php
+msgid "Reprendre (%d en attente)"
+msgstr ""
+
+#: admin/views/import.php
+msgid "Progression de l'import"
+msgstr ""
+
+#: admin/views/import.php
+msgid "livres traités"
+msgstr ""
+
+#: admin/views/import.php
+msgid "erreur(s)"
+msgstr ""
+
+#: admin/views/import.php
+msgid "Arrêter"
+msgstr ""
+
+#: admin/views/orders.php
+msgid "Commandes HUB Dilicom"
+msgstr ""
+
+#: admin/views/orders.php
+msgid "Aucune commande transmise au HUB."
+msgstr ""
+
+#: admin/views/orders.php
+msgid "%d commande(s) trouvée(s)."
+msgstr ""
+
+#: admin/views/logs.php
+msgid "Journal des logs — HUB Dilicom"
+msgstr ""
+
+#: admin/views/logs.php
+msgid "Vider les logs"
+msgstr ""
+
+#: admin/views/logs.php
+msgid "Tous niveaux"
+msgstr ""
+
+#: admin/views/logs.php
+msgid "Aucun log trouvé."
+msgstr ""
+
+#: templates/email/digital-download.php
+msgid "Vos livres numériques sont prêts !"
+msgstr ""
+
+#: templates/email/digital-download.php
+msgid "Bonjour %s,"
+msgstr ""
+
+#: templates/email/digital-download.php
+msgid "Votre commande #%d est confirmée. Vous pouvez télécharger vos livres numériques en cliquant sur les liens ci-dessous."
+msgstr ""
+
+#: templates/email/digital-download.php
+msgid "Télécharger"
+msgstr ""
+
+#: templates/email/digital-download.php
+msgid "Ces liens sont personnels et limités dans le temps. Ne les partagez pas."
+msgstr ""
+
+#: includes/woocommerce/class-wc-product-book.php
+msgid "Détails du livre"
+msgstr ""

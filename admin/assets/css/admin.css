@@ -1,0 +1,134 @@
+/* =========================================================
+   WC Hub Dilicom — Styles Admin
+   ========================================================= */
+
+/* Layout */
+.whd-wrap { max-width: 1200px; }
+.whd-page-title { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
+.whd-page-title .dashicons { font-size: 24px; color: #2271b1; }
+
+/* Cards */
+.whd-card {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+}
+.whd-card h2 { margin: 0 0 12px; font-size: 15px; font-weight: 600; color: #1d2327; border-bottom: 1px solid #f0f0f0; padding-bottom: 10px; }
+.whd-card-actions { display: flex; gap: 8px; margin-top: 16px; }
+
+/* KPI Grid */
+.whd-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+.whd-kpi-card {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 1px 4px rgba(0,0,0,.05);
+    transition: box-shadow .2s;
+}
+.whd-kpi-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,.1); }
+.whd-kpi-card--error { border-color: #cc1818; background: #fff5f5; }
+.whd-kpi-icon { font-size: 28px; color: #2271b1; margin-bottom: 8px; }
+.whd-kpi-card--error .whd-kpi-icon { color: #cc1818; }
+.whd-kpi-value { font-size: 32px; font-weight: 700; color: #1d2327; line-height: 1; margin-bottom: 6px; }
+.whd-kpi-card--error .whd-kpi-value { color: #cc1818; }
+.whd-kpi-label { font-size: 12px; color: #646970; text-transform: uppercase; letter-spacing: .5px; }
+
+/* Dashboard Grid */
+.whd-dashboard-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 900px) { .whd-dashboard-grid { grid-template-columns: 1fr; } }
+
+/* Info Table */
+.whd-info-table { width: 100%; border-collapse: collapse; }
+.whd-info-table th, .whd-info-table td { padding: 8px 12px; font-size: 13px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+.whd-info-table th { width: 40%; color: #646970; font-weight: 500; }
+
+/* Badges */
+.whd-badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; }
+.whd-badge--success { background: #edfaed; color: #008a00; border: 1px solid #c3e6c3; }
+.whd-badge--error   { background: #fde8e8; color: #cc1818; border: 1px solid #f8c3c3; }
+.whd-badge--warning { background: #fef9e7; color: #996300; border: 1px solid #f8e6a0; }
+.whd-badge--info    { background: #e8f4fd; color: #2271b1; border: 1px solid #b8d9f5; }
+.whd-badge--digital  { background: #e8f4fd; color: #2271b1; }
+.whd-badge--physical { background: #edfaed; color: #008a00; }
+
+/* Notices */
+.whd-notice { margin: 0 0 16px; }
+
+/* Test connexion */
+.whd-test-connection-wrap { margin-top: 20px; padding-top: 16px; border-top: 1px solid #f0f0f0; display: flex; align-items: center; gap: 12px; }
+.whd-test-result { font-size: 13px; font-weight: 500; }
+.whd-test-result.success { color: #008a00; }
+.whd-test-result.error   { color: #cc1818; }
+.whd-password-wrap { display: flex; gap: 8px; align-items: center; }
+
+/* Search Bar (Catalogue) */
+.whd-search-bar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.whd-search-bar input.regular-text { flex: 1; min-width: 180px; max-width: 260px; }
+
+/* Book preview */
+.whd-book-preview { display: flex; gap: 24px; }
+.whd-book-cover-wrap { flex: 0 0 140px; }
+.whd-book-cover-wrap img { width: 140px; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
+.whd-no-cover { width: 140px; height: 200px; background: #f0f0f0; border-radius: 4px; display: flex; align-items: center; justify-content: center; color: #ccc; font-size: 40px; }
+.whd-book-info { flex: 1; }
+.whd-book-title { margin: 0 0 4px; font-size: 18px; color: #1d2327; }
+.whd-book-subtitle { margin: 0 0 16px; color: #646970; font-style: italic; }
+.whd-book-description { margin-top: 16px; padding-top: 16px; border-top: 1px solid #f0f0f0; font-size: 13px; color: #3c434a; line-height: 1.6; max-height: 120px; overflow-y: auto; }
+.whd-import-actions { margin-top: 16px; display: flex; align-items: center; gap: 12px; }
+.whd-inline-result { font-size: 13px; font-weight: 500; }
+.whd-inline-result.success { color: #008a00; }
+.whd-inline-result.error   { color: #cc1818; }
+
+/* Import Bulk */
+.whd-bulk-actions { margin-top: 20px; padding-top: 16px; border-top: 1px solid #f0f0f0; display: flex; gap: 10px; }
+.whd-progress-info { font-size: 14px; margin-bottom: 10px; color: #3c434a; }
+.whd-errors-count { color: #cc1818; font-weight: 700; }
+.whd-progress-bar-wrap { background: #f0f0f0; border-radius: 4px; height: 24px; overflow: hidden; position: relative; }
+.whd-progress-bar { background: linear-gradient(90deg, #2271b1, #135e96); height: 100%; border-radius: 4px; transition: width .4s ease; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; min-width: 40px; }
+.whd-progress-bar span { color: #fff; font-size: 12px; font-weight: 700; }
+.whd-status-msg { margin-top: 10px; font-size: 13px; color: #646970; min-height: 20px; }
+
+/* Logs */
+.whd-log-filters { margin-bottom: 16px; }
+.whd-filters-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.whd-filters-row select, .whd-filters-row input[type="text"], .whd-filters-row input[type="date"] { height: 32px; padding: 0 8px; border: 1px solid #8c8f94; border-radius: 4px; font-size: 13px; }
+.whd-log-row--error   { background: #fff5f5 !important; }
+.whd-log-row--warning { background: #fef9e7 !important; }
+.whd-logs-table code { font-size: 11px; }
+.whd-return-code { background: #f0f0f0; padding: 2px 5px; border-radius: 3px; font-size: 11px; }
+.whd-log-context summary { cursor: pointer; font-size: 11px; color: #2271b1; margin-top: 4px; }
+.whd-log-context pre { font-size: 11px; max-height: 100px; overflow: auto; background: #f9f9f9; padding: 6px; border: 1px solid #e0e0e0; border-radius: 3px; white-space: pre-wrap; }
+
+/* Orders */
+.whd-orders-table code { font-size: 11px; }
+.whd-status-badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; background: #f0f0f0; color: #3c434a; }
+.whd-status-badge.whd-status-processing { background: #edfaed; color: #008a00; }
+.whd-status-badge.whd-status-completed  { background: #e8f4fd; color: #2271b1; }
+.whd-status-badge.whd-status-cancelled  { background: #fde8e8; color: #cc1818; }
+.whd-status-badge.whd-status-on-hold    { background: #fef9e7; color: #996300; }
+
+/* Result count */
+.whd-result-count { color: #646970; font-size: 13px; margin-bottom: 12px; }
+
+/* Empty state */
+.whd-empty-state { text-align: center; padding: 60px 20px; color: #646970; }
+.whd-empty-state h3 { color: #3c434a; margin: 12px 0 8px; }
+
+/* Loading */
+.whd-loading { display: flex; align-items: center; gap: 8px; padding: 16px 0; color: #646970; }
+.whd-loading .spinner { float: none; margin: 0; }
+
+/* Book badge (frontend) */
+.hub-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; margin-bottom: 6px; }
+.hub-badge--digital  { background: #e8f4fd; color: #2271b1; }
+.hub-badge--physical { background: #edfaed; color: #008a00; }
