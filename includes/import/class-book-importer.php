@@ -11,11 +11,13 @@ class Book_Importer {
     private Hub_Api_Catalog $catalog_api;
     private Onix_Parser $parser;
     private Onix_Mapper $mapper;
+    private Cover_Image_Service $cover_service;
 
-    public function __construct( ?Hub_Api_Catalog $c=null, ?Onix_Parser $p=null, ?Onix_Mapper $m=null ) {
-        $this->catalog_api = $c ?? new Hub_Api_Catalog();
-        $this->parser      = $p ?? new Onix_Parser();
-        $this->mapper      = $m ?? new Onix_Mapper();
+    public function __construct( ?Hub_Api_Catalog $c=null, ?Onix_Parser $p=null, ?Onix_Mapper $m=null, ?Cover_Image_Service $cover=null ) {
+        $this->catalog_api   = $c ?? new Hub_Api_Catalog();
+        $this->parser        = $p ?? new Onix_Parser();
+        $this->mapper        = $m ?? new Onix_Mapper();
+        $this->cover_service = $cover ?? new Cover_Image_Service();
     }
 
     public function import_from_ean( string $ean13, string $gln ): array {
@@ -57,9 +59,8 @@ class Book_Importer {
         $pid = $product->save();
         if (!$pid) return new \WP_Error('create_failed','Échec création produit WC.');
         $this->save_hub_meta($pid, $mapped['meta_data']);
-        // Catégories : plus d'assignation
         if (!empty($mapped['tags']))       wp_set_post_terms($pid, $mapped['tags'],        'product_tag');
-        $this->set_external_image($pid, $d['cover_url']??'');
+        $this->import_cover_image($pid, $d['cover_url'] ?? '', $d['ean13'] ?? '');
         return $pid;
     }
 
@@ -69,9 +70,11 @@ class Book_Importer {
         $this->apply_wc_data($product, $mapped);
         $product->save();
         $this->save_hub_meta($pid, $mapped['meta_data']);
-        // Catégories : plus d'assignation (ni mise à jour)
-        $new = $d['cover_url']??''; $old = get_post_meta($pid,'_hub_cover_url',true);
-        if ($new && $new !== $old) $this->set_external_image($pid, $new);
+
+        $cover_url = $d['cover_url'] ?? '';
+        if ( $cover_url ) {
+            $this->import_cover_image( $pid, $cover_url, $d['ean13'] ?? '' );
+        }
         return $pid;
     }
 
@@ -88,7 +91,6 @@ class Book_Importer {
         $p->set_manage_stock(false);
         $p->set_stock_status($wc['stock_status']??'instock');
 
-        // Statut de taxe défini dans les réglages du plugin
         $tax_status = get_option( 'whd_import_tax_status', 'taxable' );
         $p->set_tax_status( $tax_status );
     }
@@ -97,54 +99,12 @@ class Book_Importer {
         foreach ($meta as $k => $v) update_post_meta($pid, $k, $v);
     }
 
-   public function set_external_image( int $pid, string $url ): void {
-    if ( empty( $url ) ) return;
-
-    // Si déjà un placeholder avec la même URL, on ne fait rien
-    $existing_url = get_post_meta( $pid, '_hub_cover_url', true );
-    if ( $existing_url === $url && get_post_meta( $pid, '_hub_placeholder_attachment_id', true ) ) {
-        return;
+    public function import_cover_image( int $pid, string $url, string $ean13 ): void {
+        if ( empty( $url ) || empty( $ean13 ) ) {
+            return;
+        }
+        $this->cover_service->import_for_product( $pid, $url, $ean13 );
     }
-
-    // Créer un placeholder 1x1 si nécessaire
-    $placeholder_id = get_post_meta( $pid, '_hub_placeholder_attachment_id', true );
-    if ( ! $placeholder_id ) {
-        $placeholder_id = $this->create_placeholder_image( $pid );
-        if ( ! $placeholder_id ) return;
-    }
-
-    // Définir l'image à la une avec le placeholder
-    set_post_thumbnail( $pid, $placeholder_id );
-    update_post_meta( $pid, '_hub_cover_url', esc_url_raw( $url ) );
-    update_post_meta( $pid, '_hub_placeholder_attachment_id', $placeholder_id );
-}
-
-private function create_placeholder_image( int $product_id ): int {
-    $placeholder_path = WHD_PATH . 'assets/img/placeholder.png';
-    if ( ! file_exists( $placeholder_path ) ) {
-        wp_mkdir_p( dirname( $placeholder_path ) );
-        $im = imagecreatetruecolor(1, 1);
-        imagesavealpha($im, true);
-        $transparent = imagecolorallocatealpha($im, 0, 0, 0, 127);
-        imagefill($im, 0, 0, $transparent);
-        imagepng($im, $placeholder_path);
-        imagedestroy($im);
-    }
-
-    $file_array = [
-        'name'     => 'placeholder.png',
-        'tmp_name' => $placeholder_path,
-    ];
-    require_once ABSPATH . 'wp-admin/includes/media.php';
-    require_once ABSPATH . 'wp-admin/includes/file.php';
-    require_once ABSPATH . 'wp-admin/includes/image.php';
-    $attachment_id = media_handle_sideload( $file_array, $product_id );
-    if ( is_wp_error( $attachment_id ) ) {
-        Hub_Logger::warning( 'import/image', "Placeholder creation failed: " . $attachment_id->get_error_message() );
-        return 0;
-    }
-    return $attachment_id;
-}
 
     public function product_exists( string $ean13 ): int {
         global $wpdb;

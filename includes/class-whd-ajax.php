@@ -5,6 +5,7 @@ use WC_Hub_Dilicom\Api\Hub_Api_Client;
 use WC_Hub_Dilicom\Api\Hub_Api_Catalog;
 use WC_Hub_Dilicom\Import\Book_Importer;
 use WC_Hub_Dilicom\Import\Bulk_Importer;
+use WC_Hub_Dilicom\Import\Cover_Image_Service;
 use WC_Hub_Dilicom\Hub_Logger;
 use WC_Hub_Dilicom\Onix\Onix_Parser;
 
@@ -291,6 +292,7 @@ public function browse_catalog(): void {
             $ean = $item['ean13'] ?? '';
             $item['imported']   = in_array($ean, $imported_eans, true);
             $item['product_id'] = $this->get_pid($ean);
+            $item = $this->enrich_cover_url( $item );
         }
         unset($item);
 
@@ -760,7 +762,18 @@ private function maybe_send_error( string $msg ): void {
         $pid                  = $this->get_pid($notice['ean13']);
         $notice['imported']   = (bool)$pid;
         $notice['product_id'] = $pid;
-        return $notice;
+        return $this->enrich_cover_url( $notice );
+    }
+
+    private function enrich_cover_url( array $item ): array {
+        $product_id = (int) ( $item['product_id'] ?? 0 );
+        if ( $product_id > 0 ) {
+            $item['cover_url'] = Cover_Image_Service::get_display_url(
+                $product_id,
+                (string) ( $item['cover_url'] ?? '' )
+            );
+        }
+        return $item;
     }
 
     private function get_imported_eans(array $eans): array {

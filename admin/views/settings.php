@@ -173,6 +173,70 @@ $has_login = ! empty( $opts['api_login'] );
             </table>
         </div>
 
+        <!-- ── Bloc Couvertures (WebP) ───────────────────────────── -->
+        <div class="whd-card">
+            <h2><?php esc_html_e( 'Optimisation des couvertures', 'wc-hub-dilicom' ); ?></h2>
+            <p class="description">
+                <?php esc_html_e( 'Télécharge les couvertures depuis Dilicom, les redimensionne et les convertit en WebP lors de l\'import.', 'wc-hub-dilicom' ); ?>
+            </p>
+            <table class="form-table" role="presentation">
+                <tr>
+                    <th scope="row"><?php esc_html_e( 'Activer l\'optimisation', 'wc-hub-dilicom' ); ?></th>
+                    <td>
+                        <input type="hidden" name="whd_cover_optimize_enabled" value="no" />
+                        <label>
+                            <input type="checkbox" name="whd_cover_optimize_enabled" value="yes" <?php checked( $opts['cover_enabled'], 'yes' ); ?> />
+                            <?php esc_html_e( 'Télécharger et optimiser les couvertures à l\'import', 'wc-hub-dilicom' ); ?>
+                        </label>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="whd_cover_max_height"><?php esc_html_e( 'Hauteur max (px)', 'wc-hub-dilicom' ); ?></label></th>
+                    <td>
+                        <input type="number" id="whd_cover_max_height" name="whd_cover_max_height"
+                               value="<?php echo esc_attr( (string) $opts['cover_max_height'] ); ?>"
+                               class="small-text" min="100" max="2000" step="1" />
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="whd_cover_webp_quality"><?php esc_html_e( 'Qualité WebP', 'wc-hub-dilicom' ); ?></label></th>
+                    <td>
+                        <input type="number" id="whd_cover_webp_quality" name="whd_cover_webp_quality"
+                               value="<?php echo esc_attr( (string) $opts['cover_quality'] ); ?>"
+                               class="small-text" min="1" max="100" step="1" />
+                        <p class="description"><?php esc_html_e( 'Valeur entre 1 et 100. Recommandé : 80.', 'wc-hub-dilicom' ); ?></p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="whd_cover_queue_batch"><?php esc_html_e( 'Lot file d\'attente', 'wc-hub-dilicom' ); ?></label></th>
+                    <td>
+                        <input type="number" id="whd_cover_queue_batch" name="whd_cover_queue_batch"
+                               value="<?php echo esc_attr( (string) $opts['cover_batch'] ); ?>"
+                               class="small-text" min="5" max="100" step="1" />
+                        <p class="description"><?php esc_html_e( 'Nombre de couvertures traitées par exécution cron.', 'wc-hub-dilicom' ); ?></p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><?php esc_html_e( 'Support WebP', 'wc-hub-dilicom' ); ?></th>
+                    <td>
+                        <?php if ( $opts['cover_webp'] ) : ?>
+                            <span class="whd-badge whd-badge--success"><?php esc_html_e( 'Disponible', 'wc-hub-dilicom' ); ?></span>
+                        <?php else : ?>
+                            <span class="whd-badge whd-badge--warning"><?php esc_html_e( 'Non disponible — JPEG sera utilisé', 'wc-hub-dilicom' ); ?></span>
+                        <?php endif; ?>
+                    </td>
+                </tr>
+            </table>
+
+            <div class="whd-test-connection-wrap">
+                <button type="button" id="whd-backfill-covers" class="button button-secondary">
+                    <?php esc_html_e( 'Télécharger & optimiser les couvertures existantes', 'wc-hub-dilicom' ); ?>
+                </button>
+                <span id="whd-cover-backfill-result" class="whd-test-result"></span>
+            </div>
+            <p id="whd-cover-queue-status" class="description"></p>
+        </div>
+
         <?php submit_button( __( 'Enregistrer les paramètres', 'wc-hub-dilicom' ) ); ?>
     </form>
 </div>

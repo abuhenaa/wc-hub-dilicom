@@ -3,7 +3,7 @@
  * Plugin Name:       WC Hub Dilicom
  * Plugin URI:        https://github.com/
  * Description:       Connecte WooCommerce au HUB Dilicom (ONIX).
- * Version:           3.0.0
+ * Version:           3.0.1
  * Author:            Xavier Burlot
  * Text Domain:       wc-hub-dilicom
  * Domain Path:       /languages
@@ -80,6 +80,20 @@ function whd_activate(): void {
         created_at DATETIME NOT NULL,
         PRIMARY KEY (id), KEY idx_order(order_id), KEY idx_status(status)
     ) $c;" );
+    dbDelta( "CREATE TABLE IF NOT EXISTS {$wpdb->prefix}hub_cover_queue (
+        id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+        product_id BIGINT UNSIGNED NOT NULL,
+        ean13 VARCHAR(20) NOT NULL DEFAULT '',
+        cover_url TEXT NOT NULL,
+        attempts TINYINT UNSIGNED NOT NULL DEFAULT 0,
+        last_error TEXT DEFAULT NULL,
+        status VARCHAR(10) NOT NULL DEFAULT 'pending',
+        created_at DATETIME NOT NULL,
+        updated_at DATETIME NOT NULL,
+        PRIMARY KEY (id),
+        UNIQUE KEY product_id (product_id),
+        KEY idx_status (status)
+    ) $c;" );
     $wpdb->insert( $wpdb->prefix . 'hub_logs', [
         'level' => 'info', 'endpoint' => 'plugin/activate',
         'message' => 'WC Hub Dilicom v3.0.0 activé.', 'created_at' => current_time('mysql'),
@@ -90,7 +104,8 @@ function whd_deactivate(): void {
     wp_clear_scheduled_hook( 'whd_daily_sync' );
     wp_clear_scheduled_hook( 'whd_price_sync' );
     wp_clear_scheduled_hook( 'whd_continue_parse' );
-    wp_clear_scheduled_hook( 'whd_continue_light_cache' );   // ← nouvelle tâche à nettoyer
+    wp_clear_scheduled_hook( 'whd_continue_light_cache' );
+    wp_clear_scheduled_hook( 'whd_process_cover_queue' );
 }
 
 // ── Bootstrap ─────────────────────────────────────────────────────────────────
@@ -115,8 +130,14 @@ function whd_init(): void {
     whd_require( WHD_PATH . 'includes/onix/class-onix-parser.php' );
     whd_require( WHD_PATH . 'includes/onix/class-onix-mapper.php' );
     whd_require( WHD_PATH . 'includes/import/class-import-filter.php' );
+    whd_require( WHD_PATH . 'includes/import/class-cover-queue.php' );
+    whd_require( WHD_PATH . 'includes/import/class-cover-image-service.php' );
     whd_require( WHD_PATH . 'includes/import/class-book-importer.php' );
     whd_require( WHD_PATH . 'includes/import/class-bulk-importer.php' );
+
+    if ( class_exists( 'WC_Hub_Dilicom\\Import\\Cover_Queue' ) ) {
+        WC_Hub_Dilicom\Import\Cover_Queue::install_table();
+    }
     whd_require( WHD_PATH . 'includes/woocommerce/class-wc-product-book.php' );
     whd_require( WHD_PATH . 'includes/woocommerce/class-wc-cart-handler.php' );
     whd_require( WHD_PATH . 'includes/woocommerce/class-wc-checkout-handler.php' );
@@ -154,6 +175,10 @@ function whd_init(): void {
         wp_schedule_event( time(), 'six_hours', 'whd_price_sync' );
     }
 
+    if ( ! wp_next_scheduled( 'whd_process_cover_queue' ) ) {
+        wp_schedule_event( time() + 60, 'five_minutes', 'whd_process_cover_queue' );
+    }
+
     // Shortcode d'affichage des produits HUB
     if ( ! is_admin() || wp_doing_ajax() ) {
         new WC_Hub_Dilicom\WooCommerce\WC_Shortcode_Hub_Products();
@@ -169,6 +194,27 @@ add_action( 'whd_daily_sync', static function () {
 
 // Action pour le cron de synchronisation des prix
 add_action( 'whd_price_sync', [ 'WC_Hub_Dilicom\\Sync\\Price_Sync', 'run' ] );
+
+add_filter( 'cron_schedules', static function ( array $schedules ): array {
+    if ( ! isset( $schedules['five_minutes'] ) ) {
+        $schedules['five_minutes'] = [
+            'interval' => 300,
+            'display'  => __( 'Every 5 minutes', 'wc-hub-dilicom' ),
+        ];
+    }
+    return $schedules;
+} );
+
+add_action( 'whd_process_cover_queue', static function () {
+    if ( ! class_exists( 'WC_Hub_Dilicom\\Import\\Cover_Queue' ) ) {
+        return;
+    }
+    $queue = new WC_Hub_Dilicom\Import\Cover_Queue();
+    $result = $queue->process_batch();
+    if ( $result['remaining'] > 0 && ! wp_next_scheduled( 'whd_process_cover_queue' ) ) {
+        wp_schedule_single_event( time() + 60, 'whd_process_cover_queue' );
+    }
+} );
 
 // Action pour le parsing en arrière‑plan (appelée par le cron)
 add_action( 'whd_continue_parse', function() {
