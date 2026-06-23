@@ -10,7 +10,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Cover_Image_Service {
 
 	const META_COVER_ATTACHMENT = '_hub_cover_attachment_id';
-	const META_COVER_URL        = '  _hub_cover_url';
+	const META_COVER_URL        = '_hub_cover_url';
 	const META_PLACEHOLDER      = '_hub_placeholder_attachment_id';
 
 	const OPT_ENABLED  = 'whd_cover_optimize_enabled';
@@ -90,7 +90,7 @@ class Cover_Image_Service {
 			return false;
 		}
 
-		$optimized = $this->optimize_image( $tmp, $ean13 );
+		$optimized = $this->optimize_image( $tmp, $product_id, $ean13 );
 		@unlink( $tmp );
 
 		if ( is_wp_error( $optimized ) ) {
@@ -136,9 +136,23 @@ class Cover_Image_Service {
 	}
 
 	/**
+	 * Build a filesystem-safe cover filename from the product title.
+	 */
+	private function get_cover_filename( int $product_id, string $ean13, string $ext ): string {
+		$title = get_the_title( $product_id );
+		$base  = $title ? sanitize_title( $title ) : '';
+
+		if ( empty( $base ) ) {
+			$base = sanitize_file_name( $ean13 );
+		}
+
+		return $base . '.' . $ext;
+	}
+
+	/**
 	 * @return array{path:string,filename:string}|\WP_Error
 	 */
-	private function optimize_image( string $input_path, string $ean13 ): array|\WP_Error {
+	private function optimize_image( string $input_path, int $product_id, string $ean13 ): array|\WP_Error {
 		$settings = self::get_settings();
 		$editor   = wp_get_image_editor( $input_path );
 
@@ -149,10 +163,11 @@ class Cover_Image_Service {
 		$editor->resize( null, $settings['max_height'], false );
 		$editor->set_quality( $settings['quality'] );
 
-		$use_webp = self::supports_webp();
-		$ext      = $use_webp ? 'webp' : 'jpg';
-		$mime     = $use_webp ? 'image/webp' : 'image/jpeg';
-		$dest     = trailingslashit( get_temp_dir() ) . sanitize_file_name( $ean13 ) . '.' . $ext;
+		$use_webp  = self::supports_webp();
+		$ext       = $use_webp ? 'webp' : 'jpg';
+		$mime      = $use_webp ? 'image/webp' : 'image/jpeg';
+		$filename  = $this->get_cover_filename( $product_id, $ean13, $ext );
+		$dest      = trailingslashit( get_temp_dir() ) . $filename;
 
 		$saved = $editor->save( $dest, $mime );
 		if ( is_wp_error( $saved ) ) {
@@ -161,7 +176,7 @@ class Cover_Image_Service {
 
 		return [
 			'path'     => $saved['path'],
-			'filename' => sanitize_file_name( $ean13 ) . '.' . $ext,
+			'filename' => $filename,
 		];
 	}
 
