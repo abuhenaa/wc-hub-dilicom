@@ -22,6 +22,10 @@ class Admin_Settings {
     const OPT_COVER_MAX_H      = 'whd_cover_max_height';
     const OPT_COVER_QUALITY    = 'whd_cover_webp_quality';
     const OPT_COVER_BATCH      = 'whd_cover_queue_batch';
+    const OPT_FTP_HOST         = 'whd_ftp_host';
+    const OPT_FTP_USER         = 'whd_ftp_user';
+    const OPT_FTP_PASS         = 'whd_ftp_pass';
+    const OPT_FTP_PORT         = 'whd_ftp_port';
 
     public function __construct() {
         add_action( 'admin_init', [ $this, 'register_settings' ] );
@@ -44,6 +48,10 @@ class Admin_Settings {
             self::OPT_COVER_MAX_H       => [ $this, 'sanitize_cover_max_height' ],
             self::OPT_COVER_QUALITY     => [ $this, 'sanitize_cover_quality' ],
             self::OPT_COVER_BATCH       => [ $this, 'sanitize_cover_batch' ],
+            self::OPT_FTP_HOST          => 'sanitize_text_field',
+            self::OPT_FTP_USER          => 'sanitize_text_field',
+            self::OPT_FTP_PASS          => [ $this, 'sanitize_ftp_password' ],
+            self::OPT_FTP_PORT          => [ $this, 'sanitize_ftp_port' ],
         ];
         foreach ( $opts as $name => $cb ) {
             register_setting( self::OPTION_GROUP, $name, [ 'sanitize_callback' => $cb ] );
@@ -121,6 +129,14 @@ class Admin_Settings {
         return max( 5, min( 100, (int) $v ) );
     }
 
+    public function sanitize_ftp_password( string $v ): string {
+        return empty( trim( $v ) ) ? (string) get_option( self::OPT_FTP_PASS, '' ) : sanitize_text_field( $v );
+    }
+
+    public function sanitize_ftp_port( $v ): int {
+        return max( 1, min( 65535, (int) $v ) );
+    }
+
     public static function get_all(): array {
         $cover = Cover_Image_Service::get_settings();
         return [
@@ -137,6 +153,10 @@ class Admin_Settings {
             'cover_quality'     => $cover['quality'],
             'cover_batch'       => (int) get_option( self::OPT_COVER_BATCH, 25 ),
             'cover_webp'        => $cover['webp'],
+            'ftp_host'          => (string) get_option( self::OPT_FTP_HOST, 'pftp.centprod.com' ),
+            'ftp_user'          => (string) get_option( self::OPT_FTP_USER, '' ),
+            'ftp_pass'          => (string) get_option( self::OPT_FTP_PASS, '' ),
+            'ftp_port'          => (int) get_option( self::OPT_FTP_PORT, 21 ),
         ];
     }
 

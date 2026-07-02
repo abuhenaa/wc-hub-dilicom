@@ -26,10 +26,6 @@ class Onix_Parser {
         '03' => 'Pas de DRM',
     ];
 
-    // Identifiants FTP fournis par Dilicom
-    const FTP_HOST = 'pftp.centprod.com';
-    const FTP_USER = '3025599123609';
-    const FTP_PASS = 'eingahM1';
 
     public function download_onix_file( string $url ): string|false {
     // 1. Téléchargement direct sans authentification
@@ -53,22 +49,31 @@ class Onix_Parser {
 
     // 3. FTP
     Hub_Logger::info( 'onix/download', 'Tentative FTP avec mot de passe API...' );
-    $ftp = ftp_connect( self::FTP_HOST, 21, 30 );
-    if ( $ftp ) {
-        if ( @ftp_login( $ftp, self::FTP_USER, self::FTP_PASS ) ) {
-            ftp_pasv( $ftp, true );
-            $path = parse_url( $url, PHP_URL_PATH );
-            $tmpfile = tempnam( sys_get_temp_dir(), 'onix' );
-            if ( ftp_get( $ftp, $tmpfile, $path, FTP_BINARY ) ) {
-                $content = file_get_contents( $tmpfile );
-                unlink( $tmpfile );
-                ftp_close( $ftp );
-                $size = strlen($content);
-                Hub_Logger::info( 'onix/download', "Fichier ONIX obtenu via FTP, taille: {$size} octets, début: " . substr($content, 0, 80) );
-                return $content;
+    $ftp_host = (string) get_option( 'whd_ftp_host', 'pftp.centprod.com' );
+    $ftp_user = (string) get_option( 'whd_ftp_user', '' );
+    $ftp_pass = (string) get_option( 'whd_ftp_pass', '' );
+    $ftp_port = (int) get_option( 'whd_ftp_port', 21 );
+
+    if ( empty( $ftp_user ) || empty( $ftp_pass ) ) {
+        Hub_Logger::warning( 'onix/download', 'Identifiants FTP non configurés.' );
+    } else {
+        $ftp = ftp_connect( $ftp_host, $ftp_port, 30 );
+        if ( $ftp ) {
+            if ( @ftp_login( $ftp, $ftp_user, $ftp_pass ) ) {
+                ftp_pasv( $ftp, true );
+                $path = parse_url( $url, PHP_URL_PATH );
+                $tmpfile = tempnam( sys_get_temp_dir(), 'onix' );
+                if ( ftp_get( $ftp, $tmpfile, $path, FTP_BINARY ) ) {
+                    $content = file_get_contents( $tmpfile );
+                    unlink( $tmpfile );
+                    ftp_close( $ftp );
+                    $size = strlen($content);
+                    Hub_Logger::info( 'onix/download', "Fichier ONIX obtenu via FTP, taille: {$size} octets, début: " . substr($content, 0, 80) );
+                    return $content;
+                }
             }
+            ftp_close( $ftp );
         }
-        ftp_close( $ftp );
     }
 
     Hub_Logger::error( 'onix/download', 'Tous les téléchargements ont échoué.' );

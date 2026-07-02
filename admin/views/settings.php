@@ -237,6 +237,60 @@ $has_login = ! empty( $opts['api_login'] );
             <p id="whd-cover-queue-status" class="description"></p>
         </div>
 
+        <!-- ── Bloc FTP (Fallback) ───────────────────────────────── -->
+        <div class="whd-card">
+            <h2><?php esc_html_e( 'Configuration FTP (Fallback)', 'wc-hub-dilicom' ); ?></h2>
+            <p class="description">
+                <?php esc_html_e( 'Identifiants FTP utilisés en fallback si le téléchargement HTTP échoue. Fournis par Dilicom.', 'wc-hub-dilicom' ); ?>
+            </p>
+            <table class="form-table" role="presentation">
+                <tr>
+                    <th scope="row"><label for="whd_ftp_host"><?php esc_html_e( 'Hôte FTP', 'wc-hub-dilicom' ); ?></label></th>
+                    <td>
+                        <input type="text" id="whd_ftp_host" name="whd_ftp_host"
+                               value="<?php echo esc_attr( $opts['ftp_host'] ); ?>"
+                               class="regular-text" placeholder="pftp.centprod.com" />
+                        <p class="description"><?php esc_html_e( 'Serveur FTP Dilicom.', 'wc-hub-dilicom' ); ?></p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="whd_ftp_user"><?php esc_html_e( 'Utilisateur FTP', 'wc-hub-dilicom' ); ?></label></th>
+                    <td>
+                        <input type="text" id="whd_ftp_user" name="whd_ftp_user"
+                               value="<?php echo esc_attr( $opts['ftp_user'] ); ?>"
+                               class="regular-text" placeholder="3025599123609" />
+                        <p class="description"><?php esc_html_e( 'Identifiant FTP fourni par Dilicom.', 'wc-hub-dilicom' ); ?></p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">
+                        <label for="whd_ftp_pass"><?php esc_html_e( 'Mot de passe FTP', 'wc-hub-dilicom' ); ?></label>
+                    </th>
+                    <td>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <input type="password" id="whd_ftp_pass" name="whd_ftp_pass"
+                                   value="" class="regular-text"
+                                   placeholder="<?php echo $opts['ftp_pass'] ? esc_attr__( '(mot de passe enregistré)', 'wc-hub-dilicom' ) : ''; ?>"
+                                   autocomplete="new-password" />
+                            <button type="button" class="button whd-toggle-password" data-target="whd_ftp_pass">
+                                <?php esc_html_e( 'Afficher', 'wc-hub-dilicom' ); ?>
+                            </button>
+                        </div>
+                        <p class="description"><?php esc_html_e( 'Laissez vide pour conserver le mot de passe actuel.', 'wc-hub-dilicom' ); ?></p>
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row"><label for="whd_ftp_port"><?php esc_html_e( 'Port FTP', 'wc-hub-dilicom' ); ?></label></th>
+                    <td>
+                        <input type="number" id="whd_ftp_port" name="whd_ftp_port"
+                               value="<?php echo esc_attr( (string) $opts['ftp_port'] ); ?>"
+                               class="small-text" min="1" max="65535" step="1" />
+                        <p class="description"><?php esc_html_e( 'Port FTP (par défaut : 21).', 'wc-hub-dilicom' ); ?></p>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
         <?php submit_button( __( 'Enregistrer les paramètres', 'wc-hub-dilicom' ) ); ?>
     </form>
 </div>

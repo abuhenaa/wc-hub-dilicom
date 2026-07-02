@@ -93,6 +93,17 @@ $pending_queue  = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}hub
             </button>
             <span id="whd-light-cache-bg-result" style="display:inline-block;margin-top:10px;font-weight:500;"></span>
         </div>
+
+        <!-- Réparation des chunks (doublons) -->
+        <div class="whd-card">
+            <h2><?php esc_html_e( 'Réparer les chunks (supprimer les doublons)', 'wc-hub-dilicom' ); ?></h2>
+            <p><?php esc_html_e( 'Analyse tous les chunks de produits et supprime les doublons EAN13.', 'wc-hub-dilicom' ); ?></p>
+            <button type="button" id="whd-repair-chunks" class="button button-secondary">
+                <span class="dashicons dashicons-admin-tools"></span>
+                <?php esc_html_e( 'Réparer les chunks', 'wc-hub-dilicom' ); ?>
+            </button>
+            <span id="whd-repair-chunks-result" style="display:inline-block;margin-top:10px;font-weight:500;"></span>
+        </div>
     </div>
 </div>
 
@@ -157,6 +168,35 @@ jQuery(document).ready(function($) {
         .fail(function() {
             $msg.text('Erreur réseau.').css('color', 'red');
             $btn.prop('disabled', false).text('Lancer la régénération');
+        });
+    });
+
+    // Réparation des chunks
+    $('#whd-repair-chunks').on('click', function() {
+        var $btn = $(this).prop('disabled', true).text('Réparation en cours…');
+        var $msg = $('#whd-repair-chunks-result').text('');
+
+        if (!confirm('Cette action va analyser et réparer tous les chunks de produits. Continuer ?')) {
+            $btn.prop('disabled', false).text('Réparer les chunks');
+            return;
+        }
+
+        $.post(whdAdmin.ajaxurl, {
+            action: 'whd_repair_chunks',
+            nonce:  whdAdmin.nonce
+        })
+        .done(function(r) {
+            if (r.success) {
+                $msg.text(r.data.message).css('color', 'green');
+                $btn.prop('disabled', false).text('Réparer les chunks');
+            } else {
+                $msg.text(r.data.message || 'Erreur.').css('color', 'red');
+                $btn.prop('disabled', false).text('Réparer les chunks');
+            }
+        })
+        .fail(function() {
+            $msg.text('Erreur réseau.').css('color', 'red');
+            $btn.prop('disabled', false).text('Réparer les chunks');
         });
     });
 });

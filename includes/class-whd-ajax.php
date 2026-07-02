@@ -25,6 +25,7 @@ class WHD_Ajax {
         add_action('wp_ajax_whd_load_full_catalog', [$this,'load_full_catalog']);
        add_action('wp_ajax_whd_parse_full_catalog_background', [$this,'parse_full_catalog_background']);
        add_action( 'wp_ajax_whd_regenerate_light_cache_bg', [ $this, 'regenerate_light_cache_background' ] );
+       add_action( 'wp_ajax_whd_repair_chunks', [ $this, 'repair_chunks' ] );
     }
 
     private function check(): void {
@@ -339,6 +340,13 @@ public function _parse_full_catalog_background(): void {
     $cache_dir   = WP_CONTENT_DIR . '/uploads/hub-cache/';
     $full_file   = $cache_dir . 'onix_full.xml';
 
+    // Load all existing EAN13s once at the start for performance
+    $ean_cache_key = 'whd_parse_ean_cache';
+    if ( $offset === 0 ) {
+        // First run - build the EAN cache
+        $this->build_ean_cache( $cache_dir );
+    }
+
     // Vérification existence fichier
     if ( ! file_exists( $full_file ) ) {
         Hub_Logger::error( 'ajax/parse_background', 'Fichier introuvable' );
@@ -400,6 +408,8 @@ public function _parse_full_catalog_background(): void {
 
         if ( count( $parsed ) < $batch ) {
             delete_option( $offset_key );
+            // Clean up EAN cache when parsing is complete
+            $this->clear_ean_cache( $cache_dir );
             error_log( "[WHD parse_background] Terminé. Total notices parsées = {$offset}" );
             Hub_Logger::info( 'ajax/parse_background', 'Terminé. Total notices parsées = ' . $offset );
             $this->maybe_send_success( 'Terminé. ' . $offset . ' notices.', true );
@@ -421,6 +431,7 @@ public function _parse_full_catalog_background(): void {
 
 /**
  * Ajoute des notices (format léger) directement dans les chunks et met à jour l'index.
+ * Utilise un cache EAN pour la performance et met à jour les entrées existantes.
  */
 public function add_to_light_cache( string $cache_dir, array $new_items ): void {
     $light_dir = $cache_dir . 'light/';
@@ -431,11 +442,22 @@ public function add_to_light_cache( string $cache_dir, array $new_items ): void 
     $index_file = $light_dir . 'index.json';
     $index = file_exists( $index_file ) ? json_decode( file_get_contents( $index_file ), true ) : [ 'chunks' => [], 'total_notices' => 0 ];
 
+    // Charger les EAN13 depuis le cache fichier (beaucoup plus rapide que de relire tous les chunks)
+    $ean_cache_file = $light_dir . '.ean_cache';
+    $existing_eans = [];
+    if ( file_exists( $ean_cache_file ) ) {
+        $cache_content = file_get_contents( $ean_cache_file );
+        $existing_eans = json_decode( $cache_content, true ) ?: [];
+    }
+
     // Prochain numéro de chunk
     $chunk_number = count( $index['chunks'] );
     $chunk_file   = $light_dir . "chunk_{$chunk_number}.json";
 
     $light = [];
+    $updated_count = 0;
+    $added_count = 0;
+
     foreach ( $new_items as $ean => $item ) {
         $authors = array_column( $item['contributors'] ?? [], 'name' );
         $light[ $ean ] = [
@@ -452,16 +474,244 @@ public function add_to_light_cache( string $cache_dir, array $new_items ): void 
             'subjects'           => $item['subjects'] ?? [],
             'contributors'       => $item['contributors'] ?? [],
         ];
+
+        if ( isset( $existing_eans[ $ean ] ) ) {
+            $updated_count++;
+        } else {
+            $added_count++;
+        }
+
+        // Update cache
+        $existing_eans[ $ean ] = true;
     }
 
-    file_put_contents( $chunk_file, json_encode( $light, JSON_UNESCAPED_UNICODE ) );
+    // Ne créer le chunk que s'il y a des items à ajouter
+    if ( ! empty( $light ) ) {
+        file_put_contents( $chunk_file, json_encode( $light, JSON_UNESCAPED_UNICODE ) );
 
-    $index['chunks'][] = "chunk_{$chunk_number}.json";
-    $index['total_notices'] += count( $light );
+        $index['chunks'][] = "chunk_{$chunk_number}.json";
+        $index['total_notices'] += $added_count;
+        file_put_contents( $index_file, json_encode( $index ) );
+
+        // Update EAN cache file
+        file_put_contents( $ean_cache_file, json_encode( $existing_eans ) );
+
+        error_log( "[WHD light_cache] Chunk écrit : {$chunk_file} (" . count( $light ) . " notices). Ajoutés: {$added_count}, Mis à jour: {$updated_count}. Total : {$index['total_notices']}" );
+        Hub_Logger::info( 'ajax/parse_background', "Chunk léger écrit : chunk_{$chunk_number}.json (" . count( $light ) . " notices). Ajoutés: {$added_count}, Mis à jour: {$updated_count}. Total : {$index['total_notices']}" );
+    }
+}
+
+/**
+ * Construit le cache EAN au début du parsing pour optimiser les performances.
+ */
+private function build_ean_cache( string $cache_dir ): void {
+    $light_dir = $cache_dir . 'light/';
+    $index_file = $light_dir . 'index.json';
+    $ean_cache_file = $light_dir . '.ean_cache';
+
+    if ( ! file_exists( $index_file ) ) {
+        // Pas de chunks existants, créer un cache vide
+        file_put_contents( $ean_cache_file, json_encode( [] ) );
+        Hub_Logger::info( 'ajax/parse_background', 'Cache EAN créé (vide).' );
+        return;
+    }
+
+    $index = json_decode( file_get_contents( $index_file ), true );
+    if ( ! is_array( $index ) || empty( $index['chunks'] ) ) {
+        file_put_contents( $ean_cache_file, json_encode( [] ) );
+        Hub_Logger::info( 'ajax/parse_background', 'Cache EAN créé (vide - index vide).' );
+        return;
+    }
+
+    Hub_Logger::info( 'ajax/parse_background', 'Construction du cache EAN depuis ' . count( $index['chunks'] ) . ' chunks...' );
+
+    $all_eans = [];
+    foreach ( $index['chunks'] as $chunk_filename ) {
+        $chunk_path = $light_dir . $chunk_filename;
+        if ( ! file_exists( $chunk_path ) ) continue;
+
+        $chunk_data = json_decode( file_get_contents( $chunk_path ), true );
+        if ( is_array( $chunk_data ) ) {
+            foreach ( array_keys( $chunk_data ) as $ean ) {
+                $all_eans[ $ean ] = true;
+            }
+        }
+    }
+
+    file_put_contents( $ean_cache_file, json_encode( $all_eans ) );
+    Hub_Logger::info( 'ajax/parse_background', 'Cache EAN construit avec ' . count( $all_eans ) . ' EAN13s.' );
+}
+
+/**
+ * Nettoie le cache EAN après la fin du parsing.
+ */
+private function clear_ean_cache( string $cache_dir ): void {
+    $light_dir = $cache_dir . 'light/';
+    $ean_cache_file = $light_dir . '.ean_cache';
+
+    if ( file_exists( $ean_cache_file ) ) {
+        unlink( $ean_cache_file );
+        Hub_Logger::info( 'ajax/parse_background', 'Cache EAN supprimé.' );
+    }
+}
+
+/**
+ * Récupère tous les EAN13 existants dans tous les chunks pour éviter les doublons.
+ * @deprecated Utilisé uniquement par la fonction de réparation, plus par le parsing normal.
+ */
+private function get_all_existing_eans( string $light_dir, array $chunk_files ): array {
+    $all_eans = [];
+    foreach ( $chunk_files as $chunk_filename ) {
+        $chunk_path = $light_dir . $chunk_filename;
+        if ( ! file_exists( $chunk_path ) ) continue;
+        $chunk_data = json_decode( file_get_contents( $chunk_path ), true );
+        if ( is_array( $chunk_data ) ) {
+            foreach ( array_keys( $chunk_data ) as $ean ) {
+                $all_eans[ $ean ] = true;
+            }
+        }
+    }
+    return $all_eans;
+}
+
+/**
+ * Répare les chunks en supprimant les doublons EAN13.
+ * Point d'entrée AJAX.
+ */
+public function repair_chunks(): void {
+    $this->check();
+    @ini_set( 'memory_limit', '1024M' );
+    @set_time_limit( 300 );
+
+    $cache_dir = WP_CONTENT_DIR . '/uploads/hub-cache/';
+    $light_dir = $cache_dir . 'light/';
+    $index_file = $light_dir . 'index.json';
+
+    if ( ! file_exists( $index_file ) ) {
+        wp_send_json_error( [ 'message' => 'Aucun index de chunks trouvé. Veuillez d\'abord générer le cache léger.' ] );
+        return;
+    }
+
+    $index = json_decode( file_get_contents( $index_file ), true );
+    if ( ! is_array( $index ) || empty( $index['chunks'] ) ) {
+        wp_send_json_error( [ 'message' => 'Index de chunks vide ou corrompu.' ] );
+        return;
+    }
+
+    Hub_Logger::info( 'ajax/repair_chunks', 'Début de la réparation des chunks.' );
+
+    // Use a temporary file to store EAN13s to avoid memory issues
+    $temp_ean_file = $light_dir . 'temp_eans.txt';
+    $temp_file_handle = fopen( $temp_ean_file, 'w' );
+    if ( ! $temp_file_handle ) {
+        wp_send_json_error( [ 'message' => 'Impossible de créer le fichier temporaire.' ] );
+        return;
+    }
+
+    $unique_products = [];
+    $duplicate_count = 0;
+    $total_before = 0;
+    $chunk_size = 500;
+
+    // Process chunks in batches to avoid memory issues
+    foreach ( $index['chunks'] as $chunk_filename ) {
+        $chunk_path = $light_dir . $chunk_filename;
+        if ( ! file_exists( $chunk_path ) ) continue;
+
+        $chunk_data = json_decode( file_get_contents( $chunk_path ), true );
+        if ( ! is_array( $chunk_data ) ) continue;
+
+        $total_before += count( $chunk_data );
+
+        foreach ( $chunk_data as $ean => $item ) {
+            // Check if EAN already exists by seeking in temp file
+            $found = false;
+            rewind( $temp_file_handle );
+            while ( ( $line = fgets( $temp_file_handle ) ) !== false ) {
+                if ( trim( $line ) === $ean ) {
+                    $found = true;
+                    $duplicate_count++;
+                    break;
+                }
+            }
+
+            if ( ! $found ) {
+                $unique_products[ $ean ] = $item;
+                fwrite( $temp_file_handle, $ean . "\n" );
+            }
+        }
+
+        // Clear memory periodically
+        if ( count( $unique_products ) > 5000 ) {
+            $this->rebuild_chunks_from_memory( $light_dir, $unique_products, $chunk_size );
+            $unique_products = [];
+        }
+    }
+
+    fclose( $temp_file_handle );
+    unlink( $temp_ean_file );
+
+    // Rebuild remaining products
+    if ( ! empty( $unique_products ) ) {
+        $this->rebuild_chunks_from_memory( $light_dir, $unique_products, $chunk_size );
+    }
+
+    // Delete old chunks
+    $new_chunks = glob( $light_dir . 'chunk_*.json' );
+    $new_chunk_names = array_map( function( $path ) {
+        return basename( $path );
+    }, $new_chunks );
+
+    foreach ( $index['chunks'] as $old_chunk ) {
+        $old_path = $light_dir . $old_chunk;
+        if ( file_exists( $old_path ) && ! in_array( $old_chunk, $new_chunk_names, true ) ) {
+            unlink( $old_path );
+        }
+    }
+
+    // Update index
+    $index['chunks'] = $new_chunk_names;
+    $index['total_notices'] = $total_before - $duplicate_count;
     file_put_contents( $index_file, json_encode( $index ) );
 
-    error_log( "[WHD light_cache] Chunk écrit : {$chunk_file} (" . count( $light ) . " notices). Total : {$index['total_notices']}" );
-    Hub_Logger::info( 'ajax/parse_background', "Chunk léger écrit : chunk_{$chunk_number}.json (" . count( $light ) . " notices). Total : {$index['total_notices']}" );
+    Hub_Logger::info( 'ajax/repair_chunks', "Réparation terminée. Avant: {$total_before}, Après: " . ($total_before - $duplicate_count) . ", Doublons supprimés: {$duplicate_count}" );
+
+    wp_send_json_success( [
+        'message' => sprintf(
+            'Réparation terminée. %d produits au total, %d doublons supprimés.',
+            $total_before - $duplicate_count,
+            $duplicate_count
+        ),
+        'total_before' => $total_before,
+        'total_after' => $total_before - $duplicate_count,
+        'duplicates_removed' => $duplicate_count,
+    ] );
+}
+
+/**
+ * Helper to rebuild chunks from memory array.
+ */
+private function rebuild_chunks_from_memory( string $light_dir, array &$products, int $chunk_size ): void {
+    static $chunk_number = 0;
+
+    $current_chunk = [];
+    foreach ( $products as $ean => $item ) {
+        $current_chunk[ $ean ] = $item;
+
+        if ( count( $current_chunk ) >= $chunk_size ) {
+            $chunk_file = $light_dir . "chunk_{$chunk_number}.json";
+            file_put_contents( $chunk_file, json_encode( $current_chunk, JSON_UNESCAPED_UNICODE ) );
+            $chunk_number++;
+            $current_chunk = [];
+        }
+    }
+
+    // Save remaining items
+    if ( ! empty( $current_chunk ) ) {
+        $chunk_file = $light_dir . "chunk_{$chunk_number}.json";
+        file_put_contents( $chunk_file, json_encode( $current_chunk, JSON_UNESCAPED_UNICODE ) );
+        $chunk_number++;
+    }
 }
 /**
  * Point d’entrée AJAX – régénération du cache allégé par lots.
