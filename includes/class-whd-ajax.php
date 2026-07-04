@@ -332,7 +332,15 @@ public function _parse_full_catalog_background(): void {
     @set_time_limit( 0 );
 
     $offset_key = 'whd_full_parse_offset';
+    $heartbeat_key = 'whd_parse_heartbeat';
+    $start_time_key = 'whd_parse_start_time';
     $offset     = max( 0, (int) get_option( $offset_key, 0 ) );
+
+    // Track heartbeat for monitoring
+    update_option( $heartbeat_key, current_time( 'mysql', true ) );
+    if ( $offset === 0 ) {
+        update_option( $start_time_key, current_time( 'mysql', true ) );
+    }
 
     error_log( "[WHD parse_background] === DÉBUT === Offset = {$offset}" );
     Hub_Logger::info( 'ajax/parse_background', "=== DÉBUT === Offset = {$offset}" );
@@ -410,6 +418,9 @@ public function _parse_full_catalog_background(): void {
             delete_option( $offset_key );
             // Clean up EAN cache when parsing is complete
             $this->clear_ean_cache( $cache_dir );
+            // Clean up heartbeat tracking
+            delete_option( $heartbeat_key );
+            delete_option( $start_time_key );
             error_log( "[WHD parse_background] Terminé. Total notices parsées = {$offset}" );
             Hub_Logger::info( 'ajax/parse_background', 'Terminé. Total notices parsées = ' . $offset );
             $this->maybe_send_success( 'Terminé. ' . $offset . ' notices.', true );

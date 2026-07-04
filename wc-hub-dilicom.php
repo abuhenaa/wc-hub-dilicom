@@ -3,7 +3,7 @@
  * Plugin Name:       WC Hub Dilicom
  * Plugin URI:        https://github.com/
  * Description:       Connecte WooCommerce au HUB Dilicom (ONIX).
- * Version:           3.0.2
+ * Version:           3.0.3
  * Author:            Xavier Burlot
  * Text Domain:       wc-hub-dilicom
  * Domain Path:       /languages
@@ -16,7 +16,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
-define( 'WHD_VERSION', '3.0.0' );
+define( 'WHD_VERSION', '3.0.3' );
 define( 'WHD_FILE',    __FILE__ );
 define( 'WHD_PATH',    plugin_dir_path( __FILE__ ) );
 define( 'WHD_URL',     plugin_dir_url( __FILE__ ) );

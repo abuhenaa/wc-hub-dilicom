@@ -13,6 +13,23 @@ $total_digital  = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->postmeta} 
 $total_physical = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->postmeta} WHERE meta_key='_hub_book_type' AND meta_value='physical'" );
 $total_errors   = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}hub_logs WHERE level='error' AND created_at >= DATE_SUB(NOW(), INTERVAL 24 HOUR)" );
 $pending_queue  = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}hub_import_queue WHERE status='pending'" );
+
+// Parsing status
+$parse_offset = get_option( 'whd_full_parse_offset', 0 );
+$parse_heartbeat = get_option( 'whd_parse_heartbeat', '' );
+$parse_start_time = get_option( 'whd_parse_start_time', '' );
+$parse_status = 'idle';
+$parse_status_text = __( 'Non démarré', 'wc-hub-dilicom' );
+
+if ( $parse_offset > 0 ) {
+    if ( $parse_heartbeat && ( time() - strtotime( $parse_heartbeat ) < 120 ) ) {
+        $parse_status = 'running';
+        $parse_status_text = sprintf( __( 'En cours - %d notices traitées', 'wc-hub-dilicom' ), $parse_offset );
+    } else {
+        $parse_status = 'stopped';
+        $parse_status_text = sprintf( __( 'Arrêté - %d notices traitées (reprendre)', 'wc-hub-dilicom' ), $parse_offset );
+    }
+}
 ?>
 <div class="wrap whd-wrap">
     <h1 class="whd-page-title">
@@ -75,7 +92,10 @@ $pending_queue  = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->prefix}hub
         <!-- Parsing complet (arrière‑plan) -->
         <div class="whd-card">
             <h2><?php esc_html_e( 'Parsing complet (arrière‑plan)', 'wc-hub-dilicom' ); ?></h2>
-            <p><?php esc_html_e( 'Parse le fichier onix_full.xml par petits lots.', 'wc-hub-dilicom' ); ?></p>
+            <p>
+                <?php esc_html_e( 'Parse le fichier onix_full.xml par petits lots.', 'wc-hub-dilicom' ); ?>
+                <br><strong><?php echo esc_html( $parse_status_text ); ?></strong>
+            </p>
             <button type="button" id="whd-start-background-parse" class="button button-primary">
                 <span class="dashicons dashicons-clock"></span>
                 <?php esc_html_e( 'Lancer le parsing en arrière‑plan', 'wc-hub-dilicom' ); ?>
